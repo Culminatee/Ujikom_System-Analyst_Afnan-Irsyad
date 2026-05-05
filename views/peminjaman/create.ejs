@@ -5,6 +5,38 @@
   <title>Ajukan Peminjaman</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
+<script>
+  const formPeminjaman = document.getElementById('formPeminjaman');
+  const tglPinjam = document.getElementById('tglPinjam');
+  const tglKembali = document.getElementById('tglKembali');
+  const errorTanggal = document.getElementById('errorTanggal');
+
+  const today = new Date().toISOString().split('T')[0];
+  tglPinjam.min = today;
+  tglKembali.min = today;
+
+  tglPinjam.addEventListener('change', () => {
+    if (tglPinjam.value) {
+      const nextDay = new Date(tglPinjam.value);
+      nextDay.setDate(nextDay.getDate() + 1);
+      tglKembali.min = nextDay.toISOString().split('T')[0];
+    }
+  });
+
+  formPeminjaman.addEventListener('submit', (e) => {
+    const pinjamTime = new Date(tglPinjam.value).getTime();
+    const kembaliTime = new Date(tglKembali.value).getTime();
+
+    if (pinjamTime >= kembaliTime) {
+      e.preventDefault();
+      errorTanggal.style.display = 'block';
+    } else {
+      errorTanggal.style.display = 'none';
+    }
+  });
+</script>
+
 <body>
   <%- include('../partials/navbar') %>
   <div class="container mt-4" style="max-width: 600px;">
@@ -12,7 +44,7 @@
     <% if (error) { %>
       <div class="alert alert-danger"><%= error %></div>
     <% } %>
-    <form action="/peminjaman" method="POST" class="card p-4 shadow-sm mt-3">
+    <form action="/peminjaman" method="POST" class="card p-4 shadow-sm mt-3" id="formPeminjaman">
       <div class="mb-3">
         <label class="form-label">Barang</label>
         <select name="barang_id" class="form-select" required>
@@ -28,11 +60,12 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Tanggal Pinjam</label>
-        <input type="date" name="tgl_pinjam" class="form-control" required>
+        <input type="date" name="tgl_pinjam" class="form-control" id="tglPinjam" required>
       </div>
       <div class="mb-3">
         <label class="form-label">Rencana Tanggal Kembali</label>
-        <input type="date" name="tgl_kembali_rencana" class="form-control" required>
+        <input type="date" name="tgl_kembali_rencana" class="form-control" id="tglKembali" required>
+        <small class="text-danger" id="errorTanggal" style="display: none;">Tanggal kembali harus lebih besar dari tanggal pinjam!</small>
       </div>
       <div class="mb-3">
         <label class="form-label">Catatan <small class="text-muted">(opsional)</small></label>

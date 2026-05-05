@@ -39,16 +39,43 @@ router.post('/', isLogin, (req, res) => {
   const { barang_id, jumlah, tgl_pinjam, tgl_kembali_rencana, catatan } = req.body;
   const user = req.session.user;
 
+  // Validasi tanggal
+  const tglPinjamDate = new Date(tgl_pinjam);
+  const tglKembaliDate = new Date(tgl_kembali_rencana);
+  
+  if (tglPinjamDate >= tglKembaliDate) {
+    db.query('SELECT * FROM barang WHERE jumlah > 0', (err, barangList) => {
+      res.render('peminjaman/create', {
+        barang: barangList, user,
+        error: 'Tanggal kembali harus lebih besar dari tanggal pinjam!'
+      });
+    });
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (tglPinjamDate < today) {
+    db.query('SELECT * FROM barang WHERE jumlah > 0', (err, barangList) => {
+      res.render('peminjaman/create', {
+        barang: barangList, user,
+        error: 'Tanggal pinjam tidak boleh di masa lalu!'
+      });
+    });
+    return;
+  }
+
   // Cek stok cukup
   db.query('SELECT * FROM barang WHERE id = ?', [barang_id], (err, results) => {
     const barang = results[0];
     if (!barang || barang.jumlah < jumlah) {
-      return db.query('SELECT * FROM barang WHERE jumlah > 0', (err, barangList) => {
+      db.query('SELECT * FROM barang WHERE jumlah > 0', (err, barangList) => {
         res.render('peminjaman/create', {
           barang: barangList, user,
           error: 'Stok barang tidak mencukupi!'
         });
       });
+      return;
     }
 
     // Generate kode pinjam
